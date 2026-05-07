@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import ARViewer from '@/components/ARViewer';
 import ARExperienceHeader from '@/components/ARExperienceHeader';
 import ARInstructions from '@/components/ARInstructions';
-import ARButton from '@/components/ARButton';
 import ARCTA from '@/components/ARCTA';
 import ARFallback from '@/components/ARFallback';
 import ARLoadingSkeleton from '@/components/ARLoadingSkeleton';
@@ -25,6 +24,8 @@ const uiCopy = {
     errorMsg: 'No pudimos cargar esta experiencia. Intenta de nuevo o explora la guía Bitravel.',
     retryBtn: 'Reintentar',
     guideBtn: 'Ir a la guía Bitravel',
+    arActivated: '¡Realidad aumentada activada!',
+    loading: 'Preparando experiencia...',
   },
   en: {
     arButton: 'View in augmented reality',
@@ -33,6 +34,8 @@ const uiCopy = {
     errorMsg: "We couldn't load this experience. Please try again or explore the Bitravel guide.",
     retryBtn: 'Try again',
     guideBtn: 'Go to Bitravel guide',
+    arActivated: 'Augmented reality activated!',
+    loading: 'Loading experience...',
   },
 };
 
@@ -63,9 +66,7 @@ export default function ARExperiencePage() {
   useEffect(() => {
     if (trackedPageView.current || !slug) return;
     trackedPageView.current = true;
-
     const { os, deviceType } = deviceInfo.current;
-
     trackEvent({
       event: 'page_view',
       experience_slug: slug,
@@ -77,8 +78,6 @@ export default function ARExperiencePage() {
       timestamp: new Date().toISOString(),
       campaign,
     });
-
-    // Track QR scan if spot param present
     if (spotId) {
       trackEvent({
         event: 'qr_scan_detected',
@@ -141,10 +140,8 @@ export default function ARExperiencePage() {
     });
   }, [slug, spotId, experience?.zone, lang]);
 
-  // ── AR Button click ──────────────────────────────────────────────────────
   const handleARButtonClick = useCallback(() => {
     if (!slug) return;
-
     trackEvent({
       event: 'ar_button_clicked',
       experience_slug: slug,
@@ -155,15 +152,8 @@ export default function ARExperiencePage() {
       device_type: deviceInfo.current.deviceType,
       timestamp: new Date().toISOString(),
     });
-
-    // Activate model-viewer's AR mode
-    const mv = document.querySelector('model-viewer') as HTMLElement & {
-      activateAR?: () => void;
-    };
-    mv?.activateAR?.();
   }, [slug, spotId, experience?.zone, lang]);
 
-  // ── CTA click ────────────────────────────────────────────────────────────
   const handleCTAClick = useCallback(() => {
     if (!slug) return;
     trackEvent({
@@ -240,14 +230,22 @@ export default function ARExperiencePage() {
       <div
         className="mx-5 rounded-2xl overflow-hidden relative"
         style={{
-          height: '320px',
+          /*
+            Height adapts: enough room for the model + the AR button
+            that lives inside the model-viewer slot.
+          */
+          height: viewerState === 'ready' && !showFallback ? '420px' : '320px',
           backgroundColor: 'var(--color-surface)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
+          transition: 'height 0.3s ease',
         }}
       >
+        {/* Loading overlay */}
         {viewerState === 'loading' && (
-          <div className="absolute inset-0 flex items-center justify-center z-10"
-            style={{ backgroundColor: 'var(--color-surface)' }}>
+          <div
+            className="absolute inset-0 flex items-center justify-center z-10"
+            style={{ backgroundColor: 'var(--color-surface)' }}
+          >
             <div className="text-center">
               <div
                 className="w-12 h-12 rounded-2xl mx-auto mb-3 animate-spin"
@@ -257,7 +255,7 @@ export default function ARExperiencePage() {
                 }}
               />
               <p className="text-xs" style={{ color: 'var(--color-muted-light)' }}>
-                {lang === 'es' ? 'Preparando experiencia...' : 'Loading experience...'}
+                {ui.loading}
               </p>
             </div>
           </div>
@@ -285,9 +283,11 @@ export default function ARExperiencePage() {
             usdzUrl={experience.modelUsdzUrl}
             posterUrl={experience.posterUrl}
             alt={title}
+            arButtonLabel={ui.arButton}
             onLoad={handleModelLoad}
             onError={handleModelError}
             onARStart={handleARStart}
+            onARButtonClick={handleARButtonClick}
           />
         )}
       </div>
@@ -297,11 +297,13 @@ export default function ARExperiencePage() {
 
       {/* ── AR activated badge ── */}
       {arActivated && (
-        <div className="mx-5 mb-3 px-4 py-2.5 rounded-xl flex items-center gap-2"
-          style={{ backgroundColor: 'rgba(46, 139, 87, 0.1)' }}>
+        <div
+          className="mx-5 mb-3 px-4 py-2.5 rounded-xl flex items-center gap-2"
+          style={{ backgroundColor: 'rgba(46, 139, 87, 0.1)' }}
+        >
           <span className="text-sm">✅</span>
           <p className="text-sm font-medium" style={{ color: 'var(--color-eco)' }}>
-            {lang === 'es' ? '¡Realidad aumentada activada!' : 'Augmented reality activated!'}
+            {ui.arActivated}
           </p>
         </div>
       )}
@@ -313,8 +315,8 @@ export default function ARExperiencePage() {
         </div>
       )}
 
-      {/* ── Instructions ── */}
-      {viewerState === 'ready' && !showFallback && (
+      {/* ── Instructions (only when model ready + AR supported + not yet activated) ── */}
+      {viewerState === 'ready' && !showFallback && !arActivated && (
         <ARInstructions instruction={instruction} visible={showInstructions} />
       )}
 
@@ -325,15 +327,6 @@ export default function ARExperiencePage() {
           ctaLabel={ctaLabel}
           ctaUrl={experience.cta.url}
           onCtaClick={handleFallbackCTAClick}
-        />
-      )}
-
-      {/* ── Main AR Button ── */}
-      {viewerState === 'ready' && !showFallback && (
-        <ARButton
-          label={ui.arButton}
-          onClick={handleARButtonClick}
-          supportsAR={deviceInfo.current.supportsAR}
         />
       )}
 

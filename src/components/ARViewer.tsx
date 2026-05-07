@@ -5,9 +5,11 @@ interface ARViewerProps {
   usdzUrl?: string;
   posterUrl: string;
   alt: string;
+  arButtonLabel: string;
   onLoad?: () => void;
   onError?: () => void;
   onARStart?: () => void;
+  onARButtonClick?: () => void;
 }
 
 export default function ARViewer({
@@ -15,9 +17,11 @@ export default function ARViewer({
   usdzUrl,
   posterUrl,
   alt,
+  arButtonLabel,
   onLoad,
   onError,
   onARStart,
+  onARButtonClick,
 }: ARViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
 
@@ -51,7 +55,6 @@ export default function ARViewer({
     };
   }, [handleLoad, handleError, handleArStatus]);
 
-  // model-viewer is a web component loaded via CDN — render as an unknown element
   const ModelViewer = 'model-viewer' as unknown as React.ElementType;
 
   return (
@@ -80,8 +83,47 @@ export default function ARViewer({
         backgroundColor: 'transparent',
       }}
     >
-      {/* Hide default AR button — we use our own */}
-      <button slot="ar-button" style={{ display: 'none' }} aria-hidden="true" />
+      {/*
+        ── AR Button inside model-viewer slot ──────────────────────────────
+        model-viewer natively manages this button to open Scene Viewer (Android)
+        or Quick Look (iOS). Styling here via inline style for shadow DOM compat.
+      */}
+      <button
+        slot="ar-button"
+        id="ar-activate-btn"
+        onClick={onARButtonClick}
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100% - 40px)',
+          maxWidth: '400px',
+          padding: '16px 24px',
+          backgroundColor: '#3234DA',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '16px',
+          fontSize: '16px',
+          fontWeight: '700',
+          fontFamily: "'Inter', system-ui, sans-serif",
+          letterSpacing: '-0.01em',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          boxShadow: '0 4px 24px rgba(50, 52, 218, 0.35)',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {/* 3D cube icon */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
+          <path d="M2 7l10 5m0 0l10-5m-10 5v10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+        {arButtonLabel}
+      </button>
     </ModelViewer>
   );
 }
