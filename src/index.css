@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  /* Bitravel Color Palette */
+  --color-primary: #3234DA;
+  --color-primary-light: #4F51F5;
+  --color-primary-dark: #2123A8;
+  --color-cta: #E85D4A;
+  --color-cta-light: #FF7060;
+  --color-eco: #2E8B57;
+  --color-yellow: #F9C641;
+  --color-bg: #FFFFFF;
+  --color-surface: #F7F8FC;
+  --color-border: #E8EAF0;
+  --color-text: #1A1A2E;
+  --color-muted: #6B7280;
+  --color-muted-light: #9CA3AF;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Radius */
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 9999px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+model-viewer {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  --poster-color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
