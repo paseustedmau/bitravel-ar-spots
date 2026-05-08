@@ -156,11 +156,18 @@ export default function ARViewer({
         siempre sea visible cuando se necesita.
       */}
       {needsManualQuickLook && (
-        <a
-          href={absoluteUsdzUrl}
-          rel="ar"
+        <button
           id="ar-quicklook-manual"
-          onClick={onARButtonClick}
+          onClick={(e) => {
+             e.preventDefault();
+             onARButtonClick?.();
+             
+             // Delegate AR activation to model-viewer directly
+             const viewer = viewerRef.current as any;
+             if (viewer && typeof viewer.activateAR === 'function') {
+               viewer.activateAR();
+             }
+          }}
           style={{
             ...arBtnStyle,
             position: 'absolute',
@@ -168,14 +175,11 @@ export default function ARViewer({
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 10,
-            overflow: 'hidden' // Ensure the img doesn't break out
           }}
         >
-          {/* Apple Quick Look REQUIRES an <img> tag inside the anchor. Making it 100% width/height ensures the tap target is correct for Quick Look intercept. */}
-          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style={{ width: '100%', height: '100%', opacity: 0, position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} alt="" />
           <CubeIcon />
           <span>{arButtonLabel}</span>
-        </a>
+        </button>
       )}
     </div>
   );
