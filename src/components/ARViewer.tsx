@@ -163,17 +163,18 @@ export default function ARViewer({
           onClick={onARButtonClick}
           style={{
             ...arBtnStyle,
-            // Reset position since parent div is relative
             position: 'absolute',
             bottom: '16px',
             left: '50%',
             transform: 'translateX(-50%)',
+            zIndex: 10,
+            overflow: 'hidden' // Ensure the img doesn't break out
           }}
         >
-          {/* Apple Quick Look REQUIRES an <img> tag inside the anchor, otherwise it treats it as a normal file download and fails. */}
-          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style={{ width: 1, height: 1, opacity: 0, position: 'absolute' }} alt="" />
+          {/* Apple Quick Look REQUIRES an <img> tag inside the anchor. Making it 100% width/height ensures the tap target is correct for Quick Look intercept. */}
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style={{ width: '100%', height: '100%', opacity: 0, position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} alt="" />
           <CubeIcon />
-          {arButtonLabel}
+          <span>{arButtonLabel}</span>
         </a>
       )}
     </div>

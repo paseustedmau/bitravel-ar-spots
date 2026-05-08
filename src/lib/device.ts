@@ -16,9 +16,9 @@ export interface DeviceInfo {
 export function getDeviceInfo(): DeviceInfo {
   const ua = navigator.userAgent;
 
-  const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as Window & { MSStream?: unknown }).MSStream;
   const isAndroid = /Android/.test(ua);
   const isIPad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOS = (/iPad|iPhone|iPod/.test(ua) || isIPad) && !(window as Window & { MSStream?: unknown }).MSStream;
   const isTablet = isIPad || (/Android/.test(ua) && !/Mobile/.test(ua));
   const isMobile = (isIOS || isAndroid) && !isTablet;
 
