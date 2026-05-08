@@ -59,10 +59,12 @@ export default function ARCatalogPage() {
         }}
       >
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs font-bold">
-            B
-          </div>
-          <span className="text-white/90 text-sm font-semibold">Bitravel AR Spots</span>
+          <img 
+            src="/bitravel-logo.png" 
+            alt="Bitravel" 
+            className="h-8"
+            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+          />
         </div>
         <h1 className="text-2xl font-bold text-white mb-1">Experiencias AR</h1>
         <p className="text-white/70 text-sm">

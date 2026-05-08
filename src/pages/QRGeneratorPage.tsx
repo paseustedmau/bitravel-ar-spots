@@ -182,15 +182,12 @@ export default function QRGeneratorPage() {
     >
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            B
-          </div>
-          <span className="text-xs font-semibold" style={{ color: 'var(--color-primary)' }}>
-            Bitravel AR
-          </span>
+          <img 
+            src="/bitravel-logo.png" 
+            alt="Bitravel AR" 
+            className="h-7"
+            style={{ objectFit: 'contain' }}
+          />
         </div>
         <h1 className="text-xl font-bold mt-2" style={{ color: 'var(--color-text)' }}>
           Generador de QR

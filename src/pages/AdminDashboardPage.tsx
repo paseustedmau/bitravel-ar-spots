@@ -119,16 +119,14 @@ export default function AdminDashboardPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
+          <img
+            src="/bitravel-icon.png"
+            alt="Bitravel"
             style={{
               width: 32, height: 32, borderRadius: 10,
-              backgroundColor: 'var(--color-primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontSize: 14, fontWeight: 800,
+              objectFit: 'contain'
             }}
-          >
-            B
-          </div>
+          />
           <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)' }}>
             Admin Panel
           </span>

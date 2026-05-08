@@ -53,33 +53,15 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              backgroundColor: 'var(--color-primary)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: 22,
-              fontWeight: 800,
-              marginBottom: 12,
-            }}
-          >
-            B
-          </div>
-          <h1
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: 'var(--color-text)',
-              margin: 0,
-            }}
-          >
-            Bitravel AR
-          </h1>
+          <img 
+            src="/bitravel-logo.png" 
+            alt="Bitravel AR" 
+            style={{ 
+              height: 48, 
+              objectFit: 'contain',
+              marginBottom: 12
+            }} 
+          />
           <p
             style={{
               fontSize: 13,
