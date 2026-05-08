@@ -183,7 +183,7 @@ export default function QRGeneratorPage() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <img 
-            src="/bitravel-logo.png" 
+            src="/logo.svg" 
             alt="Bitravel AR" 
             className="h-7"
             style={{ objectFit: 'contain' }}

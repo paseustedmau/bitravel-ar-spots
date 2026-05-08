@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img
-            src="/bitravel-icon.png"
+            src="/icon.svg"
             alt="Bitravel"
             style={{
               width: 32, height: 32, borderRadius: 10,

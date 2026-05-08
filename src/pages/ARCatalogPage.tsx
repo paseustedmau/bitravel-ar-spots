@@ -60,7 +60,7 @@ export default function ARCatalogPage() {
       >
         <div className="flex items-center gap-2 mb-4">
           <img 
-            src="/bitravel-logo.png" 
+            src="/logo.svg" 
             alt="Bitravel" 
             className="h-8"
             style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}

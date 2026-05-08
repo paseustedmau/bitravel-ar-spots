@@ -54,7 +54,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <img 
-            src="/bitravel-logo.png" 
+            src="/logo.svg" 
             alt="Bitravel AR" 
             style={{ 
               height: 48, 
