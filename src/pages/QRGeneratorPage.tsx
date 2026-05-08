@@ -257,17 +257,21 @@ export default function QRGeneratorPage() {
         </div>
       </div>
 
-      {/* Save to Supabase (when spot id entered) */}
-      {spotId && (
+      {/* Save to Supabase (always visible, disabled if no spotId) */}
+      <div className="mb-3">
         <button
           onClick={handleSaveSpot}
-          disabled={saving}
-          className="w-full py-3 rounded-xl text-sm font-semibold text-white mb-3 transition-all duration-200 active:scale-95 disabled:opacity-50"
+          disabled={saving || !spotId}
+          className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-95 disabled:opacity-50"
           style={{ backgroundColor: '#2e8b57' }}
         >
-          {saving ? 'Guardando...' : `💾 Guardar spot "${spotId}" en Supabase`}
+          {saving
+            ? 'Guardando...'
+            : spotId
+            ? `💾 Guardar spot "${spotId}" en Supabase`
+            : '💾 Ingresa un Spot ID para guardar'}
         </button>
-      )}
+      </div>
       {saveMsg && (
         <p className="text-sm text-center mb-3" style={{ color: saveMsg.startsWith('✅') ? '#2e8b57' : '#e53e3e' }}>
           {saveMsg}
