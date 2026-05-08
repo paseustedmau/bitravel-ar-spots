@@ -1,5 +1,4 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { getDeviceInfo } from '@/lib/device';
 
 interface ARViewerProps {
   glbUrl: string;
@@ -61,7 +60,6 @@ export default function ARViewer({
   onARButtonClick,
 }: ARViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
-  const device = getDeviceInfo();
 
   const handleLoad = useCallback(() => {
     onLoad?.();
