@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import experiencesData from '@/data/ar-experiences.json';
-import type { ARExperience } from '@/types/ar';
 import { trackEvent } from '@/lib/analytics';
 import { getDeviceInfo } from '@/lib/device';
 import { supabase } from '@/lib/supabase';
-
-const experiences = Object.values(experiencesData as Record<string, ARExperience>).filter(
-  (e) => e.status === 'active',
-);
-
 const DEFAULT_BASE = import.meta.env.VITE_APP_URL ?? window.location.origin;
 
 interface SpotRow {
@@ -22,32 +15,46 @@ interface SpotRow {
 }
 
 export default function QRGeneratorPage() {
-  const [selectedSlug, setSelectedSlug] = useState(experiences[0]?.slug ?? '');
+  const [selectedSlug, setSelectedSlug] = useState('');
   const [spotId, setSpotId] = useState('');
   const [spotName, setSpotName] = useState('');
   const [campaign, setCampaign] = useState('');
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE);
 
-  // Supabase spots
+  // Supabase spots & experiences
   const [spots, setSpots] = useState<SpotRow[]>([]);
+  const [experiences, setExperiences] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Load existing spots
-  const loadSpots = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Load active experiences
+    const { data: expData } = await supabase
+      .from('ar_experiences')
+      .select('*')
+      .eq('status', 'active')
+      .order('sort_order', { ascending: true });
+      
+    if (expData && expData.length > 0) {
+      setExperiences(expData);
+      setSelectedSlug(expData[0].slug);
+    }
+
+    // Load spots
+    const { data: spotData, error } = await supabase
       .from('ar_spots')
       .select('id, spot_id, name, zone, experience_slug, is_active')
       .order('created_at', { ascending: false });
 
-    if (!error && data) setSpots(data as SpotRow[]);
+    if (!error && spotData) setSpots(spotData as SpotRow[]);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadSpots();
+    loadData();
     const { os, deviceType } = getDeviceInfo();
     trackEvent({
       event: 'qr_generator_opened',
@@ -56,7 +63,7 @@ export default function QRGeneratorPage() {
       device_type: deviceType,
       timestamp: new Date().toISOString(),
     });
-  }, [loadSpots]);
+  }, [loadData]);
 
   // Build the QR URL
   const buildUrl = () => {
@@ -96,7 +103,7 @@ export default function QRGeneratorPage() {
       setSaveMsg(`❌ Error: ${error.message}`);
     } else {
       setSaveMsg('✅ Spot guardado');
-      loadSpots();
+      loadData();
     }
     setSaving(false);
     setTimeout(() => setSaveMsg(''), 3000);
@@ -196,7 +203,7 @@ export default function QRGeneratorPage() {
           >
             {experiences.map((e) => (
               <option key={e.slug} value={e.slug}>
-                {e.title.es}
+                {e.title_es}
               </option>
             ))}
           </select>

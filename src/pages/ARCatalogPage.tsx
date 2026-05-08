@@ -1,18 +1,16 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import experiencesData from '@/data/ar-experiences.json';
-import type { ARExperience } from '@/types/ar';
+import { supabase } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
 import { detectLanguage } from '@/lib/i18n';
 import { getDeviceInfo } from '@/lib/device';
 
-const experiences = Object.values(experiencesData as Record<string, ARExperience>).filter(
-  (e) => e.status === 'active',
-);
-
 export default function ARCatalogPage() {
   const { os, deviceType } = getDeviceInfo();
   const lang = detectLanguage(new URLSearchParams(window.location.search));
+  
+  const [experiences, setExperiences] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     trackEvent({
@@ -22,7 +20,19 @@ export default function ARCatalogPage() {
       device_type: deviceType,
       timestamp: new Date().toISOString(),
     });
-  }, []);
+
+    async function loadExperiences() {
+      const { data } = await supabase
+        .from('ar_experiences')
+        .select('*')
+        .eq('status', 'active')
+        .order('sort_order', { ascending: true });
+      
+      if (data) setExperiences(data);
+      setLoading(false);
+    }
+    loadExperiences();
+  }, [lang, os, deviceType]);
 
   const handleExperienceSelected = useCallback((slug: string, zone?: string) => {
     trackEvent({
@@ -62,7 +72,9 @@ export default function ARCatalogPage() {
 
       {/* Experiences list */}
       <div className="px-5 py-5 flex flex-col gap-4">
-        {experiences.length === 0 ? (
+        {loading ? (
+          <p className="text-center py-12" style={{ color: 'var(--color-muted)' }}>Cargando...</p>
+        ) : experiences.length === 0 ? (
           <p className="text-center py-12" style={{ color: 'var(--color-muted)' }}>
             Próximamente más experiencias.
           </p>
@@ -82,7 +94,7 @@ export default function ARCatalogPage() {
               <div
                 className="h-44 bg-cover bg-center"
                 style={{
-                  backgroundImage: `url(${exp.posterUrl})`,
+                  backgroundImage: `url(${exp.poster_url})`,
                   backgroundColor: 'var(--color-surface)',
                 }}
               />
@@ -90,7 +102,7 @@ export default function ARCatalogPage() {
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <h2 className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
-                    {exp.title.es}
+                    {lang === 'es' ? exp.title_es : (exp.title_en || exp.title_es)}
                   </h2>
                   {exp.zone && (
                     <span
@@ -105,7 +117,7 @@ export default function ARCatalogPage() {
                   )}
                 </div>
                 <p className="text-sm line-clamp-2" style={{ color: 'var(--color-muted)' }}>
-                  {exp.description.es}
+                  {lang === 'es' ? exp.description_es : (exp.description_en || exp.description_es)}
                 </p>
                 <div className="mt-3 flex items-center gap-1 text-xs font-semibold"
                   style={{ color: 'var(--color-primary)' }}>

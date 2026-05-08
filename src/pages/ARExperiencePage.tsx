@@ -6,15 +6,13 @@ import ARInstructions from '@/components/ARInstructions';
 import ARCTA from '@/components/ARCTA';
 import ARFallback from '@/components/ARFallback';
 import ARLoadingSkeleton from '@/components/ARLoadingSkeleton';
-import { detectLanguage, t } from '@/lib/i18n';
+import { detectLanguage } from '@/lib/i18n';
 import { getDeviceInfo } from '@/lib/device';
 import { trackEvent } from '@/lib/analytics';
-import type { ARExperience, Lang } from '@/types/ar';
-import experiencesData from '@/data/ar-experiences.json';
+import { supabase } from '@/lib/supabase';
+import type { Lang } from '@/types/ar';
 
 type ViewerState = 'loading' | 'ready' | 'error';
-
-const experiences = experiencesData as Record<string, ARExperience>;
 
 const uiCopy = {
   es: {
@@ -50,13 +48,32 @@ export default function ARExperiencePage() {
   const [viewerState, setViewerState] = useState<ViewerState>('loading');
   const [showInstructions, setShowInstructions] = useState(true);
   const [arActivated, setArActivated] = useState(false);
+  
+  const [experience, setExperience] = useState<any>(null);
+  const [expLoading, setExpLoading] = useState(true);
 
   const deviceInfo = useRef(getDeviceInfo());
   const trackedPageView = useRef(false);
   const trackedNotFound = useRef(false);
 
-  const experience = slug ? experiences[slug] : null;
   const ui = uiCopy[lang];
+
+  // ── Fetch Experience ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!slug) return;
+    async function loadExperience() {
+      const { data } = await supabase
+        .from('ar_experiences')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .single();
+      
+      setExperience(data);
+      setExpLoading(false);
+    }
+    loadExperience();
+  }, [slug]);
 
   // ── Language detection ───────────────────────────────────────────────────
   useEffect(() => {
@@ -65,26 +82,45 @@ export default function ARExperiencePage() {
 
   // ── Analytics: page_view ─────────────────────────────────────────────────
   useEffect(() => {
-    if (trackedPageView.current || !slug) return;
+    if (trackedPageView.current || !slug || expLoading) return;
+    if (!experience) {
+      if (!trackedNotFound.current) {
+        trackedNotFound.current = true;
+        const { os, deviceType } = deviceInfo.current;
+        trackEvent({
+          event: 'experience_not_found',
+          experience_slug: slug,
+          spot_id: spotId,
+          language: lang,
+          device_os: os,
+          device_type: deviceType,
+          timestamp: new Date().toISOString(),
+          campaign,
+        });
+      }
+      return;
+    }
+
     trackedPageView.current = true;
     const { os, deviceType } = deviceInfo.current;
     trackEvent({
       event: 'page_view',
       experience_slug: slug,
       spot_id: spotId,
-      zone: experience?.zone,
+      zone: experience.zone,
       language: lang,
       device_os: os,
       device_type: deviceType,
       timestamp: new Date().toISOString(),
       campaign,
     });
+    
     if (spotId) {
       trackEvent({
         event: 'qr_scan_detected',
         experience_slug: slug,
         spot_id: spotId,
-        zone: experience?.zone,
+        zone: experience.zone,
         language: lang,
         device_os: os,
         device_type: deviceType,
@@ -92,7 +128,7 @@ export default function ARExperiencePage() {
         campaign,
       });
     }
-  }, [slug, spotId, campaign, lang, experience?.zone]);
+  }, [slug, spotId, campaign, lang, experience, expLoading]);
 
   // ── Model callbacks ──────────────────────────────────────────────────────
   const handleModelLoad = useCallback(() => {
@@ -184,22 +220,18 @@ export default function ARExperiencePage() {
     handleCTAClick();
   }, [slug, spotId, experience?.zone, lang, handleCTAClick]);
 
-  // ── 404 ──────────────────────────────────────────────────────────────────
-  if (!experience || experience.status !== 'active') {
-    if (!trackedNotFound.current && slug) {
-      trackedNotFound.current = true;
-      const { os, deviceType } = deviceInfo.current;
-      trackEvent({
-        event: 'experience_not_found',
-        experience_slug: slug,
-        spot_id: spotId,
-        language: lang,
-        device_os: os,
-        device_type: deviceType,
-        timestamp: new Date().toISOString(),
-        campaign,
-      });
-    }
+  // ── 404 & Loading ────────────────────────────────────────────────────────
+  if (expLoading) {
+    return (
+      <div className="min-h-screen" style={{ maxWidth: '480px', margin: '0 auto', backgroundColor: 'var(--color-bg)' }}>
+        <div className="px-5 pt-8">
+          <ARLoadingSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (!experience) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div className="text-5xl mb-4">🐋</div>
@@ -220,10 +252,11 @@ export default function ARExperiencePage() {
     );
   }
 
-  const title = t(experience.title, lang);
-  const description = t(experience.description, lang);
-  const instruction = t(experience.instruction, lang);
-  const ctaLabel = t(experience.cta.label, lang);
+  const title = lang === 'es' ? experience.title_es : (experience.title_en || experience.title_es);
+  const description = lang === 'es' ? experience.description_es : (experience.description_en || experience.description_es);
+  const instruction = lang === 'es' ? experience.instruction_es : (experience.instruction_en || experience.instruction_es);
+  const ctaLabel = lang === 'es' ? experience.cta_label_es : (experience.cta_label_en || experience.cta_label_es);
+  const ctaUrl = experience.cta_url;
 
   const showFallback = !deviceInfo.current.supportsAR && viewerState === 'ready';
 
@@ -237,15 +270,14 @@ export default function ARExperiencePage() {
         title={viewerState === 'loading' ? '' : title}
         description={viewerState === 'loading' ? '' : description}
         zone={experience.zone}
-        sponsorName={experience.sponsor?.name}
-        sponsorLogoUrl={experience.sponsor?.logoUrl}
+        sponsorName={experience.sponsor_name}
+        sponsorLogoUrl={experience.sponsor_logo_url}
       />
 
       {/* ── Model Viewer ── */}
       <div
         className="mx-5 rounded-2xl relative"
         style={{
-          /* The 3D viewer area — button is now BELOW this, in normal flow */
           minHeight: '320px',
           backgroundColor: 'var(--color-surface)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
@@ -255,7 +287,7 @@ export default function ARExperiencePage() {
         {/* Loading overlay */}
         {viewerState === 'loading' && (
           <div
-            className="absolute inset-0 flex items-center justify-center z-10"
+            className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl"
             style={{ backgroundColor: 'var(--color-surface)' }}
           >
             <div className="text-center">
@@ -305,9 +337,9 @@ export default function ARExperiencePage() {
           </div>
         ) : (
           <ARViewer
-            glbUrl={experience.modelGlbUrl}
-            usdzUrl={experience.modelUsdzUrl}
-            posterUrl={experience.posterUrl}
+            glbUrl={experience.model_glb_url}
+            usdzUrl={experience.model_usdz_url}
+            posterUrl={experience.poster_url}
             alt={title}
             arButtonLabel={ui.arButton}
             onLoad={handleModelLoad}
@@ -351,16 +383,16 @@ export default function ARExperiencePage() {
         <ARFallback
           lang={lang}
           ctaLabel={ctaLabel}
-          ctaUrl={experience.cta.url}
+          ctaUrl={ctaUrl}
           onCtaClick={handleFallbackCTAClick}
         />
       )}
 
       {/* ── CTA secundario ── */}
-      {viewerState === 'ready' && (
+      {viewerState === 'ready' && ctaUrl && (
         <ARCTA
           label={ctaLabel}
-          url={experience.cta.url}
+          url={ctaUrl}
           onClick={handleCTAClick}
         />
       )}
