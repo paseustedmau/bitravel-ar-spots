@@ -18,15 +18,12 @@ export default function ARExperienceHeader({
       {/* Top bar: Bitravel logo + optional sponsor */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            B
-          </div>
-          <span className="text-sm font-semibold" style={{ color: 'var(--color-primary)' }}>
-            Bitravel AR
-          </span>
+          <img 
+            src="/logo.svg" 
+            alt="Bitravel" 
+            className="h-6"
+            style={{ objectFit: 'contain' }}
+          />
         </div>
 
         <div className="flex items-center gap-2">
