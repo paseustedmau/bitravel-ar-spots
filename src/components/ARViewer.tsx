@@ -120,16 +120,27 @@ export default function ARViewer({
           backgroundColor: 'transparent',
         }}
       >
-        <button
-          slot="ar-button"
-          id="ar-activate-btn"
-          onClick={onARButtonClick}
-          style={arBtnStyle as React.CSSProperties}
-        >
-          <CubeIcon />
-          <span>{arButtonLabel}</span>
-        </button>
       </ModelViewer>
+
+      {/* External AR button, completely independent of model-viewer's shadow DOM hiding rules */}
+      <button
+        id="ar-activate-btn-external"
+        onClick={(e) => {
+          e.preventDefault();
+          onARButtonClick?.();
+          const viewer = viewerRef.current as any;
+          if (viewer && typeof viewer.activateAR === 'function') {
+            viewer.activateAR();
+          }
+        }}
+        style={{
+          ...arBtnStyle,
+          zIndex: 9999, // Guarantee it sits on top of the 3D canvas
+        }}
+      >
+        <CubeIcon />
+        <span>{arButtonLabel}</span>
+      </button>
     </div>
   );
 }
