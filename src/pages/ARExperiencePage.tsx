@@ -226,6 +226,7 @@ export default function ARExperiencePage() {
   const ctaLabel = t(experience.cta.label, lang);
 
   const showFallback = !deviceInfo.current.supportsAR && viewerState === 'ready';
+  const isARDevice = deviceInfo.current.supportsAR;
 
   return (
     <div
@@ -245,11 +246,8 @@ export default function ARExperiencePage() {
       <div
         className="mx-5 rounded-2xl overflow-hidden relative"
         style={{
-          /*
-            Height adapts: enough room for the model + the AR button
-            that lives inside the model-viewer slot.
-          */
-          height: viewerState === 'ready' && !showFallback ? '420px' : '320px',
+          /* Height: taller when AR button is visible inside the container */
+          height: viewerState === 'ready' && isARDevice ? '420px' : '320px',
           backgroundColor: 'var(--color-surface)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
           transition: 'height 0.3s ease',
