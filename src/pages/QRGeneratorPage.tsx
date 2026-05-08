@@ -67,7 +67,7 @@ export default function QRGeneratorPage() {
 
   // Build the QR URL
   const buildUrl = () => {
-    const base = baseUrl.replace(/\/$/, '');
+    const base = baseUrl.trim().replace(/\/$/, '');
     if (spotId) {
       const params = new URLSearchParams();
       if (campaign) params.set('campaign', campaign);
@@ -301,7 +301,7 @@ export default function QRGeneratorPage() {
           <span style={{ opacity: 0.7, fontSize: '10px', display: 'block', marginBottom: '2px' }}>
             ↪ Redirige a (configurable desde Supabase)
           </span>
-          {baseUrl.replace(/\/$/, '')}/#/ar/{selectedSlug}?spot={spotId}
+          {baseUrl.trim().replace(/\/$/, '')}/#/ar/{selectedSlug}?spot={spotId}
           {campaign ? `&campaign=${campaign}` : ''}
         </div>
       )}
