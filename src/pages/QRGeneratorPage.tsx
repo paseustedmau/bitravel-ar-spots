@@ -1,22 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import experiencesData from '@/data/ar-experiences.json';
 import type { ARExperience } from '@/types/ar';
 import { trackEvent } from '@/lib/analytics';
 import { getDeviceInfo } from '@/lib/device';
+import { supabase } from '@/lib/supabase';
 
 const experiences = Object.values(experiencesData as Record<string, ARExperience>).filter(
   (e) => e.status === 'active',
 );
 
-const BASE_URL = import.meta.env.VITE_APP_URL ?? 'https://ar.bitravel.app';
+const DEFAULT_BASE = import.meta.env.VITE_APP_URL ?? window.location.origin;
+
+interface SpotRow {
+  id: string;
+  spot_id: string;
+  name: string;
+  zone: string | null;
+  experience_slug: string | null;
+  is_active: boolean;
+}
 
 export default function QRGeneratorPage() {
   const [selectedSlug, setSelectedSlug] = useState(experiences[0]?.slug ?? '');
   const [spotId, setSpotId] = useState('');
+  const [spotName, setSpotName] = useState('');
   const [campaign, setCampaign] = useState('');
+  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE);
+
+  // Supabase spots
+  const [spots, setSpots] = useState<SpotRow[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Load existing spots
+  const loadSpots = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('ar_spots')
+      .select('id, spot_id, name, zone, experience_slug, is_active')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) setSpots(data as SpotRow[]);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
+    loadSpots();
     const { os, deviceType } = getDeviceInfo();
     trackEvent({
       event: 'qr_generator_opened',
@@ -25,36 +56,58 @@ export default function QRGeneratorPage() {
       device_type: deviceType,
       timestamp: new Date().toISOString(),
     });
-  }, []);
+  }, [loadSpots]);
 
-  /**
-   * Si hay Spot ID → QR dinámico: /s/:spot_id
-   *   El tótem físico siempre tendrá la misma URL en el QR.
-   *   Para cambiar la experiencia solo se actualiza la DB.
-   * Si no hay Spot ID → URL directa: /ar/:slug (modo preview/testing)
-   */
+  // Build the QR URL
   const buildUrl = () => {
+    const base = baseUrl.replace(/\/$/, '');
     if (spotId) {
-      // Short link dinámico
       const params = new URLSearchParams();
       if (campaign) params.set('campaign', campaign);
       const query = params.toString();
-      return `${BASE_URL}/s/${spotId}${query ? `?${query}` : ''}`;
+      return `${base}/#/s/${spotId}${query ? `?${query}` : ''}`;
     }
-    // URL directa (sin spot ID, para testing)
     const params = new URLSearchParams();
     if (campaign) params.set('campaign', campaign);
     const query = params.toString();
-    return `${BASE_URL}/ar/${selectedSlug}${query ? `?${query}` : ''}`;
+    return `${base}/#/ar/${selectedSlug}${query ? `?${query}` : ''}`;
   };
-
-  // URL de destino final (solo informativa para el admin)
-  const resolvedDestination = spotId
-    ? `${BASE_URL}/ar/${selectedSlug}?spot=${spotId}${campaign ? `&campaign=${campaign}` : ''}`
-    : null;
 
   const qrValue = buildUrl();
   const isDynamic = !!spotId;
+
+  // Save spot to Supabase
+  const handleSaveSpot = async () => {
+    if (!spotId) return;
+    setSaving(true);
+    setSaveMsg('');
+
+    const { error } = await supabase.from('ar_spots').upsert(
+      {
+        spot_id: spotId,
+        name: spotName || spotId,
+        experience_slug: selectedSlug,
+        is_active: true,
+      },
+      { onConflict: 'spot_id' },
+    );
+
+    if (error) {
+      setSaveMsg(`❌ Error: ${error.message}`);
+    } else {
+      setSaveMsg('✅ Spot guardado');
+      loadSpots();
+    }
+    setSaving(false);
+    setTimeout(() => setSaveMsg(''), 3000);
+  };
+
+  // Load spot into form
+  const handleSelectSpot = (spot: SpotRow) => {
+    setSpotId(spot.spot_id);
+    setSpotName(spot.name);
+    setSelectedSlug(spot.experience_slug ?? experiences[0]?.slug ?? '');
+  };
 
   const handleDownload = () => {
     const svg = document.querySelector('#qr-preview svg') as SVGElement;
@@ -80,6 +133,12 @@ export default function QRGeneratorPage() {
     });
   };
 
+  const inputStyle = {
+    borderColor: 'var(--color-border)',
+    backgroundColor: 'var(--color-surface)',
+    color: 'var(--color-text)',
+  };
+
   return (
     <div
       className="min-h-screen p-6"
@@ -101,12 +160,29 @@ export default function QRGeneratorPage() {
           Generador de QR
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-          Genera QR imprimibles para tótems físicos.
+          Genera QR imprimibles para tótems físicos. Guarda spots en la base de datos.
         </p>
       </div>
 
       {/* Form */}
       <div className="flex flex-col gap-4 mb-6">
+        {/* Base URL (editable) */}
+        <div>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text)' }}>
+            URL base del sitio
+          </label>
+          <input
+            type="url"
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
+            style={inputStyle}
+          />
+          <p className="text-xs mt-1" style={{ color: 'var(--color-muted-light)' }}>
+            Cambia esto si usas un dominio personalizado.
+          </p>
+        </div>
+
         {/* Experiencia */}
         <div>
           <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text)' }}>
@@ -116,11 +192,7 @@ export default function QRGeneratorPage() {
             value={selectedSlug}
             onChange={(e) => setSelectedSlug(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
-            style={{
-              borderColor: 'var(--color-border)',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text)',
-            }}
+            style={inputStyle}
           >
             {experiences.map((e) => (
               <option key={e.slug} value={e.slug}>
@@ -141,16 +213,26 @@ export default function QRGeneratorPage() {
             value={spotId}
             onChange={(e) => setSpotId(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
-            style={{
-              borderColor: 'var(--color-border)',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text)',
-            }}
+            style={inputStyle}
           />
-          <p className="text-xs mt-1" style={{ color: 'var(--color-muted-light)' }}>
-            Identifica de qué tótem viene cada escaneo.
-          </p>
         </div>
+
+        {/* Spot Name (solo si hay spotId) */}
+        {spotId && (
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text)' }}>
+              Nombre del spot
+            </label>
+            <input
+              type="text"
+              placeholder="ej. Malecón frente al hotel"
+              value={spotName}
+              onChange={(e) => setSpotName(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
+              style={inputStyle}
+            />
+          </div>
+        )}
 
         {/* Campaign */}
         <div>
@@ -163,14 +245,27 @@ export default function QRGeneratorPage() {
             value={campaign}
             onChange={(e) => setCampaign(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
-            style={{
-              borderColor: 'var(--color-border)',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text)',
-            }}
+            style={inputStyle}
           />
         </div>
       </div>
+
+      {/* Save to Supabase (when spot id entered) */}
+      {spotId && (
+        <button
+          onClick={handleSaveSpot}
+          disabled={saving}
+          className="w-full py-3 rounded-xl text-sm font-semibold text-white mb-3 transition-all duration-200 active:scale-95 disabled:opacity-50"
+          style={{ backgroundColor: '#2e8b57' }}
+        >
+          {saving ? 'Guardando...' : `💾 Guardar spot "${spotId}" en Supabase`}
+        </button>
+      )}
+      {saveMsg && (
+        <p className="text-sm text-center mb-3" style={{ color: saveMsg.startsWith('✅') ? '#2e8b57' : '#e53e3e' }}>
+          {saveMsg}
+        </p>
+      )}
 
       {/* URL del QR */}
       <div
@@ -187,8 +282,7 @@ export default function QRGeneratorPage() {
         {qrValue}
       </div>
 
-      {/* Destino resuelto (solo cuando es dinámico) */}
-      {isDynamic && resolvedDestination && (
+      {isDynamic && (
         <div
           className="px-3 py-2 rounded-xl mb-6 text-xs break-all"
           style={{
@@ -198,9 +292,10 @@ export default function QRGeneratorPage() {
           }}
         >
           <span style={{ opacity: 0.7, fontSize: '10px', display: 'block', marginBottom: '2px' }}>
-            ↪ Redirige a (configurable desde la DB)
+            ↪ Redirige a (configurable desde Supabase)
           </span>
-          {resolvedDestination}
+          {baseUrl.replace(/\/$/, '')}/#/ar/{selectedSlug}?spot={spotId}
+          {campaign ? `&campaign=${campaign}` : ''}
         </div>
       )}
       {!isDynamic && <div className="mb-6" />}
@@ -215,23 +310,73 @@ export default function QRGeneratorPage() {
           boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
         }}
       >
-        <QRCodeSVG
-          value={qrValue}
-          size={200}
-          level="H"
-          fgColor="#1A1A2E"
-          bgColor="#FFFFFF"
-        />
+        <QRCodeSVG value={qrValue} size={200} level="H" fgColor="#1A1A2E" bgColor="#FFFFFF" />
       </div>
 
       {/* Download button */}
       <button
         onClick={handleDownload}
-        className="w-full py-3.5 rounded-2xl text-sm font-semibold text-white transition-all duration-200 active:scale-95"
+        className="w-full py-3.5 rounded-2xl text-sm font-semibold text-white transition-all duration-200 active:scale-95 mb-8"
         style={{ backgroundColor: 'var(--color-primary)' }}
       >
         Descargar QR (SVG)
       </button>
+
+      {/* ── Existing spots from Supabase ── */}
+      <div className="mb-6">
+        <h2 className="text-base font-bold mb-3" style={{ color: 'var(--color-text)' }}>
+          📍 Spots guardados
+        </h2>
+
+        {loading ? (
+          <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+            Cargando spots...
+          </p>
+        ) : spots.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+            No hay spots guardados. Crea uno arriba.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {spots.map((spot) => (
+              <button
+                key={spot.id}
+                onClick={() => handleSelectSpot(spot)}
+                className="w-full text-left px-3 py-2.5 rounded-xl border transition-all duration-150 active:scale-98"
+                style={{
+                  borderColor:
+                    spot.spot_id === spotId ? 'var(--color-primary)' : 'var(--color-border)',
+                  backgroundColor:
+                    spot.spot_id === spotId ? 'rgba(50,52,218,0.06)' : 'var(--color-surface)',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span
+                      className="text-sm font-semibold block"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      {spot.name}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--color-muted)', fontFamily: 'monospace' }}>
+                      ID: {spot.spot_id} → {spot.experience_slug ?? '—'}
+                    </span>
+                  </div>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      backgroundColor: spot.is_active ? 'rgba(46,139,87,0.1)' : 'rgba(229,62,62,0.1)',
+                      color: spot.is_active ? '#2e8b57' : '#e53e3e',
+                    }}
+                  >
+                    {spot.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
