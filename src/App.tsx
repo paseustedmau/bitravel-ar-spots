@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ARExperiencePage from '@/pages/ARExperiencePage';
 import ARCatalogPage from '@/pages/ARCatalogPage';
 import QRGeneratorPage from '@/pages/QRGeneratorPage';
@@ -8,7 +8,7 @@ import ARTestPage from '@/pages/ARTestPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* ── Public AR routes ── */}
         <Route path="/ar" element={<ARCatalogPage />} />
@@ -26,6 +26,6 @@ export default function App() {
         <Route path="/" element={<Navigate to="/ar" replace />} />
         <Route path="*" element={<Navigate to="/ar" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
