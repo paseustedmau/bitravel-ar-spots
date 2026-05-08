@@ -16,6 +16,33 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   </head>
   <body>
+    <!-- ── DIAGNOSTIC: fixed red button to test Safari rendering ── -->
+    <a
+      id="safari-test-btn"
+      href="/models/whale.usdz"
+      rel="ar"
+      style="
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        z-index: 2147483647;
+        display: block;
+        padding: 18px 22px;
+        background: red;
+        color: white;
+        font-size: 20px;
+        font-weight: 800;
+        text-align: center;
+        border-radius: 16px;
+        text-decoration: none;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      "
+    >
+      TEST AR SAFARI 🔴
+    </a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

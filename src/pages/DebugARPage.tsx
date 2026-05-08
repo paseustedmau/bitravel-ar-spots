@@ -22,8 +22,8 @@ export default function DebugARPage() {
         {/* @ts-ignore */}
         <model-viewer
           id="debug-viewer"
-          src="/models/ballena.glb"
-          ios-src="/models/ballena.usdz"
+          src="/models/whale.glb"
+          ios-src="/models/whale.usdz"
           ar
           ar-modes="webxr scene-viewer quick-look"
           camera-controls
@@ -39,7 +39,7 @@ export default function DebugARPage() {
         <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px' }}>Esto fuerza al iPhone a abrir el AR saltándose el 3D. Es lo más seguro.</p>
         <a
           rel="ar"
-          href="/models/ballena.usdz"
+          href="/models/whale.usdz"
           style={{
             display: 'block',
             backgroundColor: '#007AFF',

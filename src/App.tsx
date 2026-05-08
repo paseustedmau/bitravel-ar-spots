@@ -4,6 +4,7 @@ import ARCatalogPage from '@/pages/ARCatalogPage';
 import QRGeneratorPage from '@/pages/QRGeneratorPage';
 import SpotRedirectPage from '@/pages/SpotRedirectPage';
 import DebugARPage from '@/pages/DebugARPage';
+import ARTestPage from '@/pages/ARTestPage';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/ar" element={<ARCatalogPage />} />
         <Route path="/ar/:slug" element={<ARExperiencePage />} />
         <Route path="/debug" element={<DebugARPage />} />
+        <Route path="/ar-test" element={<ARTestPage />} />
 
         {/* ── Dynamic spot short links (QR físicos) ── */}
         <Route path="/s/:spotId" element={<SpotRedirectPage />} />
