@@ -5,9 +5,12 @@ export interface DeviceInfo {
   isAndroid: boolean;
   isMobile: boolean;
   isTablet: boolean;
+  isSafari: boolean;
   os: DeviceOS;
   deviceType: DeviceType;
   supportsAR: boolean;
+  // iOS Quick Look works via direct USDZ link even in Chrome iOS
+  supportsQuickLook: boolean;
 }
 
 export function getDeviceInfo(): DeviceInfo {
@@ -19,14 +22,19 @@ export function getDeviceInfo(): DeviceInfo {
   const isTablet = isIPad || (/Android/.test(ua) && !/Mobile/.test(ua));
   const isMobile = (isIOS || isAndroid) && !isTablet;
 
+  // Safari detection: has Safari in UA but NOT Chrome/CriOS/FxiOS
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|OPiOS/.test(ua);
+
   const os: DeviceOS = isIOS ? 'ios' : isAndroid ? 'android' : 'other';
   const deviceType: DeviceType = isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop';
 
-  // AR support:
-  // - iOS: AR Quick Look via <model-viewer> with ios-src (.usdz) — Safari 12+
-  // - Android: Scene Viewer via model-viewer — Chrome 81+, requires Google Play Services AR
-  // - model-viewer handles graceful fallback automatically
+  // model-viewer's built-in AR button works when:
+  // - Android: Chrome with Scene Viewer / WebXR
+  // - iOS Safari: Quick Look via ios-src USDZ
+  // Chrome on iOS does NOT support WebXR, so model-viewer hides its button.
+  // BUT: iOS Quick Look can still be triggered via a direct <a href="*.usdz" rel="ar"> link.
   const supportsAR = isIOS || isAndroid;
+  const supportsQuickLook = isIOS; // USDZ Quick Look works on all iOS browsers via anchor trick
 
-  return { isIOS, isAndroid, isMobile, isTablet, os, deviceType, supportsAR };
+  return { isIOS, isAndroid, isMobile, isTablet, isSafari, os, deviceType, supportsAR, supportsQuickLook };
 }

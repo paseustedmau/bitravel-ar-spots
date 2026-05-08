@@ -1,12 +1,41 @@
+import { useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import experiencesData from '@/data/ar-experiences.json';
 import type { ARExperience } from '@/types/ar';
+import { trackEvent } from '@/lib/analytics';
+import { detectLanguage } from '@/lib/i18n';
+import { getDeviceInfo } from '@/lib/device';
 
 const experiences = Object.values(experiencesData as Record<string, ARExperience>).filter(
   (e) => e.status === 'active',
 );
 
 export default function ARCatalogPage() {
+  const { os, deviceType } = getDeviceInfo();
+  const lang = detectLanguage(new URLSearchParams(window.location.search));
+
+  useEffect(() => {
+    trackEvent({
+      event: 'catalog_viewed',
+      language: lang,
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
+  const handleExperienceSelected = useCallback((slug: string, zone?: string) => {
+    trackEvent({
+      event: 'experience_selected',
+      experience_slug: slug,
+      zone,
+      language: lang,
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+    });
+  }, [lang, os, deviceType]);
+
   return (
     <div
       className="min-h-screen"
@@ -42,6 +71,7 @@ export default function ARCatalogPage() {
             <Link
               key={exp.slug}
               to={`/ar/${exp.slug}`}
+              onClick={() => handleExperienceSelected(exp.slug, exp.zone)}
               className="block rounded-2xl overflow-hidden transition-all duration-200 active:scale-98"
               style={{
                 border: '1px solid var(--color-border)',

@@ -49,7 +49,7 @@ export async function trackEvent(payload: AREventPayload): Promise<void> {
   try {
     await supabase.from('ar_events').insert({
       event: payload.event,
-      experience_slug: payload.experience_slug,
+      experience_slug: payload.experience_slug ?? null,
       spot_id: payload.spot_id ?? null,
       zone: payload.zone ?? null,
       language: payload.language,

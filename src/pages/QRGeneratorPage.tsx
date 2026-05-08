@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import experiencesData from '@/data/ar-experiences.json';
 import type { ARExperience } from '@/types/ar';
+import { trackEvent } from '@/lib/analytics';
+import { getDeviceInfo } from '@/lib/device';
 
 const experiences = Object.values(experiencesData as Record<string, ARExperience>).filter(
   (e) => e.status === 'active',
@@ -14,15 +16,34 @@ export default function QRGeneratorPage() {
   const [spotId, setSpotId] = useState('');
   const [campaign, setCampaign] = useState('');
 
+  /**
+   * Si hay Spot ID → QR dinámico: /s/:spot_id
+   *   El tótem físico siempre tendrá la misma URL en el QR.
+   *   Para cambiar la experiencia solo se actualiza la DB.
+   * Si no hay Spot ID → URL directa: /ar/:slug (modo preview/testing)
+   */
   const buildUrl = () => {
+    if (spotId) {
+      // Short link dinámico
+      const params = new URLSearchParams();
+      if (campaign) params.set('campaign', campaign);
+      const query = params.toString();
+      return `${BASE_URL}/s/${spotId}${query ? `?${query}` : ''}`;
+    }
+    // URL directa (sin spot ID, para testing)
     const params = new URLSearchParams();
-    if (spotId) params.set('spot', spotId);
     if (campaign) params.set('campaign', campaign);
     const query = params.toString();
     return `${BASE_URL}/ar/${selectedSlug}${query ? `?${query}` : ''}`;
   };
 
+  // URL de destino final (solo informativa para el admin)
+  const resolvedDestination = spotId
+    ? `${BASE_URL}/ar/${selectedSlug}?spot=${spotId}${campaign ? `&campaign=${campaign}` : ''}`
+    : null;
+
   const qrValue = buildUrl();
+  const isDynamic = !!spotId;
 
   const handleDownload = () => {
     const svg = document.querySelector('#qr-preview svg') as SVGElement;
@@ -34,6 +55,18 @@ export default function QRGeneratorPage() {
     a.download = `bitravel-ar-${selectedSlug}${spotId ? `-${spotId}` : ''}.svg`;
     a.click();
     URL.revokeObjectURL(url);
+
+    const { os, deviceType } = getDeviceInfo();
+    trackEvent({
+      event: 'qr_downloaded',
+      experience_slug: selectedSlug,
+      spot_id: spotId || undefined,
+      campaign: campaign || undefined,
+      language: 'es',
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+    });
   };
 
   return (
@@ -128,17 +161,38 @@ export default function QRGeneratorPage() {
         </div>
       </div>
 
-      {/* URL preview */}
+      {/* URL del QR */}
       <div
-        className="px-3 py-2.5 rounded-xl mb-6 text-xs break-all"
+        className="px-3 py-2.5 rounded-xl mb-2 text-xs break-all"
         style={{
-          backgroundColor: 'rgba(50,52,218,0.06)',
-          color: 'var(--color-primary)',
+          backgroundColor: isDynamic ? 'rgba(50,52,218,0.06)' : 'rgba(0,0,0,0.04)',
+          color: isDynamic ? 'var(--color-primary)' : 'var(--color-muted)',
           fontFamily: 'monospace',
         }}
       >
+        <span style={{ opacity: 0.6, fontSize: '10px', display: 'block', marginBottom: '2px' }}>
+          {isDynamic ? '🔗 Short link (QR impreso)' : '🔗 URL directa (testing)'}
+        </span>
         {qrValue}
       </div>
+
+      {/* Destino resuelto (solo cuando es dinámico) */}
+      {isDynamic && resolvedDestination && (
+        <div
+          className="px-3 py-2 rounded-xl mb-6 text-xs break-all"
+          style={{
+            backgroundColor: 'rgba(46,139,87,0.07)',
+            color: 'var(--color-eco, #2e8b57)',
+            fontFamily: 'monospace',
+          }}
+        >
+          <span style={{ opacity: 0.7, fontSize: '10px', display: 'block', marginBottom: '2px' }}>
+            ↪ Redirige a (configurable desde la DB)
+          </span>
+          {resolvedDestination}
+        </div>
+      )}
+      {!isDynamic && <div className="mb-6" />}
 
       {/* QR Preview */}
       <div

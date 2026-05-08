@@ -42,7 +42,10 @@ export type AREventName =
   | 'ar_button_clicked'
   | 'ar_started'
   | 'fallback_viewed'
-  | 'cta_clicked';
+  | 'cta_clicked'
+  | 'catalog_viewed'
+  | 'experience_selected'
+  | 'qr_downloaded';
 
 export type DeviceOS = 'ios' | 'android' | 'other';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
@@ -50,7 +53,7 @@ export type Lang = 'es' | 'en';
 
 export interface AREventPayload {
   event: AREventName;
-  experience_slug: string;
+  experience_slug?: string;
   spot_id?: string;
   zone?: string;
   language: Lang;
