@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { trackEvent } from '@/lib/analytics';
 import { getDeviceInfo } from '@/lib/device';
@@ -15,6 +16,7 @@ interface SpotRow {
 }
 
 export default function QRGeneratorPage() {
+  const location = useLocation();
   const [selectedSlug, setSelectedSlug] = useState('');
   const [spotId, setSpotId] = useState('');
   const [spotName, setSpotName] = useState('');
@@ -49,9 +51,23 @@ export default function QRGeneratorPage() {
       .select('id, spot_id, name, zone, experience_slug, is_active')
       .order('created_at', { ascending: false });
 
-    if (!error && spotData) setSpots(spotData as SpotRow[]);
+    if (!error && spotData) {
+      setSpots(spotData as SpotRow[]);
+      
+      // Auto-select if ?edit= is present
+      const params = new URLSearchParams(location.search);
+      const editId = params.get('edit');
+      if (editId) {
+        const spotToEdit = spotData.find((s: any) => s.spot_id === editId);
+        if (spotToEdit) {
+          setSpotId(spotToEdit.spot_id);
+          setSpotName(spotToEdit.name);
+          setSelectedSlug(spotToEdit.experience_slug ?? '');
+        }
+      }
+    }
     setLoading(false);
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     loadData();

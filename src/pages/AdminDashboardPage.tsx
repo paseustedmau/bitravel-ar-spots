@@ -252,6 +252,16 @@ export default function AdminDashboardPage() {
                         {spot.is_active ? 'Activo' : 'Inactivo'}
                       </button>
                       <button
+                        onClick={() => navigate(`/admin/qr?edit=${spot.spot_id}`)}
+                        style={{
+                          padding: '6px 14px', borderRadius: 8, border: '1px solid var(--color-border)',
+                          backgroundColor: 'transparent', color: 'var(--color-primary)',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
                         onClick={() => deleteSpot(spot.spot_id)}
                         style={{
                           padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(229,62,62,0.2)',
