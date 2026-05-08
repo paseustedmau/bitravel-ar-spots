@@ -13,34 +13,6 @@ interface ARViewerProps {
   onARButtonClick?: () => void;
 }
 
-/* ─── Style for the external AR button ──────────────────────────────────── */
-const arBtnStyle: React.CSSProperties = {
-  position: 'absolute',
-  bottom: '16px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  width: 'calc(100% - 40px)',
-  maxWidth: '400px',
-  padding: '16px 24px',
-  backgroundColor: '#3234DA',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: '16px',
-  fontSize: '16px',
-  fontWeight: '700',
-  fontFamily: "'Inter', system-ui, sans-serif",
-  letterSpacing: '-0.01em',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '10px',
-  boxShadow: '0 4px 24px rgba(50, 52, 218, 0.35)',
-  WebkitTapHighlightColor: 'transparent',
-  textDecoration: 'none',
-  zIndex: 9999,
-};
-
 function CubeIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -53,7 +25,6 @@ function CubeIcon() {
 /* ─── Detect in-app / embedded WebView browsers ────────────────────────── */
 function isWebView(): boolean {
   const ua = navigator.userAgent;
-  // Common in-app browser signatures
   return /FBAN|FBAV|Instagram|Line\/|Twitter|Snapchat|WhatsApp|MicroMessenger|TikTok/i.test(ua);
 }
 
@@ -73,6 +44,24 @@ function buildSceneViewerUrl(glbUrl: string, title: string): string {
   );
 }
 
+/* ─── Open iOS Quick Look via dynamic <a rel="ar"> ─────────────────────── */
+function openIOSQuickLook(usdzUrl: string, posterUrl: string) {
+  const anchor = document.createElement('a');
+  anchor.setAttribute('rel', 'ar');
+  anchor.setAttribute('href', usdzUrl);
+
+  const img = document.createElement('img');
+  img.setAttribute('src', posterUrl);
+  img.setAttribute('alt', '');
+
+  anchor.appendChild(img);
+  anchor.style.display = 'none';
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+}
+
 export default function ARViewer({
   glbUrl,
   usdzUrl,
@@ -85,7 +74,6 @@ export default function ARViewer({
   onARButtonClick,
 }: ARViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
-  const iosAnchorRef = useRef<HTMLAnchorElement>(null);
   const device = getDeviceInfo();
 
   const handleLoad = useCallback(() => {
@@ -118,36 +106,41 @@ export default function ARViewer({
     };
   }, [handleLoad, handleError, handleArStatus]);
 
-  /* ─── AR launch handler ────────────────────────────────────────────── */
+  /* ─── AR launch: decide what to do on click ────────────────────────── */
   const handleARClick = useCallback(() => {
     onARButtonClick?.();
 
-    // iOS: trigger Quick Look via the hidden <a rel="ar"> anchor.
-    // This is the Apple-blessed way and works across Safari, Chrome, Firefox on iOS.
     if (device.isIOS && usdzUrl) {
-      iosAnchorRef.current?.click();
+      openIOSQuickLook(usdzUrl, posterUrl);
       return;
     }
 
-    // Android: open Scene Viewer intent
     if (device.isAndroid) {
       window.location.href = buildSceneViewerUrl(glbUrl, alt);
       return;
     }
 
-    // Desktop / other: try model-viewer's built-in activateAR as last resort
+    // Desktop / unsupported: try model-viewer activateAR as last resort
     const viewer = viewerRef.current as any;
     if (viewer && typeof viewer.activateAR === 'function') {
       viewer.activateAR();
     }
-  }, [device.isIOS, device.isAndroid, usdzUrl, glbUrl, alt, onARButtonClick]);
+  }, [device.isIOS, device.isAndroid, usdzUrl, posterUrl, glbUrl, alt, onARButtonClick]);
+
+  /* ─── Copy link for WebView users ──────────────────────────────────── */
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = document.getElementById('copy-link-btn');
+      if (btn) btn.textContent = '✓ Enlace copiado';
+    });
+  }, []);
 
   const ModelViewer = 'model-viewer' as unknown as React.ElementType;
-  const showWebViewWarning = isWebView();
+  const inWebView = isWebView();
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '320px' }}>
-      {/* ── 3D Viewer (universal, no AR attributes needed — we handle AR ourselves) ── */}
+    <>
+      {/* ── 3D Viewer — pure viewer, no AR logic ──────────────────────── */}
       <ModelViewer
         ref={viewerRef}
         src={glbUrl}
@@ -166,92 +159,92 @@ export default function ARViewer({
           width: '100%',
           height: '100%',
           minHeight: '320px',
+          display: 'block',
           backgroundColor: 'transparent',
         }}
       >
       </ModelViewer>
 
-      {/* ── Hidden iOS Quick Look anchor ─────────────────────────────────── */}
-      {/* Apple requires a real <a rel="ar"> clicked by the user (we proxy via .click()) */}
-      {device.isIOS && usdzUrl && (
-        <a
-          ref={iosAnchorRef}
-          rel="ar"
-          href={usdzUrl}
-          style={{
-            position: 'absolute',
-            width: '1px',
-            height: '1px',
-            opacity: 0,
-            pointerEvents: 'none',
-            overflow: 'hidden',
-          }}
-          aria-hidden="true"
-        >
-          {/* The <img> child is required by Quick Look to recognize this as an AR link */}
-          <img src={posterUrl} alt="" />
-        </a>
-      )}
-
-      {/* ── WebView warning ─────────────────────────────────────────────── */}
-      {showWebViewWarning ? (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '16px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 40px)',
-            maxWidth: '400px',
-            padding: '14px 20px',
-            backgroundColor: '#fff',
-            borderRadius: '16px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column' as const,
-            gap: '10px',
-            alignItems: 'center',
-            textAlign: 'center' as const,
-          }}
-        >
-          <p style={{ fontSize: '13px', color: '#333', margin: 0, fontWeight: 600 }}>
-            Para vivir la experiencia AR, abre esta página en {device.isIOS ? 'Safari' : 'Chrome'}.
-          </p>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              const btn = document.getElementById('copy-link-btn');
-              if (btn) btn.textContent = '✓ Enlace copiado';
-            }}
-            id="copy-link-btn"
+      {/* ── Button area: ALWAYS rendered, OUTSIDE model-viewer, normal flow ── */}
+      <div
+        style={{
+          padding: '16px 20px 0',
+          position: 'relative',
+          zIndex: 9999,
+        }}
+      >
+        {inWebView ? (
+          /* ── WebView: show "open in real browser" + copy link ────── */
+          <div
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#3234DA',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
+              padding: '14px 20px',
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              alignItems: 'center',
+              textAlign: 'center',
             }}
           >
-            📋 Copiar enlace
-          </button>
-        </div>
-      ) : (
-        /* ── AR launch button (visible on real browsers that support AR) ── */
-        device.supportsAR && (
+            <p style={{ fontSize: '13px', color: '#333', margin: 0, fontWeight: 600 }}>
+              Para vivir la experiencia AR, abre esta página en {device.isIOS ? 'Safari' : 'Chrome'}.
+            </p>
+            <button
+              id="copy-link-btn"
+              type="button"
+              onClick={handleCopyLink}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                backgroundColor: '#3234DA',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              📋 Copiar enlace
+            </button>
+          </div>
+        ) : (
+          /* ── Normal browser: AR button, ALWAYS visible, NO conditions ── */
           <button
             id="ar-activate-btn"
+            type="button"
             onClick={handleARClick}
-            style={arBtnStyle}
+            style={{
+              display: 'flex',
+              width: '100%',
+              padding: '16px 24px',
+              backgroundColor: '#3234DA',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '16px',
+              fontSize: '16px',
+              fontWeight: 700,
+              fontFamily: "'Inter', system-ui, sans-serif",
+              letterSpacing: '-0.01em',
+              cursor: 'pointer',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 24px rgba(50, 52, 218, 0.35)',
+              WebkitTapHighlightColor: 'transparent',
+              position: 'relative',
+              zIndex: 9999,
+              visibility: 'visible',
+              opacity: 1,
+            }}
           >
             <CubeIcon />
             <span>{arButtonLabel}</span>
           </button>
-        )
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

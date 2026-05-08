@@ -226,7 +226,6 @@ export default function ARExperiencePage() {
   const ctaLabel = t(experience.cta.label, lang);
 
   const showFallback = !deviceInfo.current.supportsAR && viewerState === 'ready';
-  const isARDevice = deviceInfo.current.supportsAR;
 
   return (
     <div
@@ -244,13 +243,13 @@ export default function ARExperiencePage() {
 
       {/* ── Model Viewer ── */}
       <div
-        className="mx-5 rounded-2xl overflow-hidden relative"
+        className="mx-5 rounded-2xl relative"
         style={{
-          /* Height: taller when AR button is visible inside the container */
-          height: viewerState === 'ready' && isARDevice ? '420px' : '320px',
+          /* The 3D viewer area — button is now BELOW this, in normal flow */
+          minHeight: '320px',
           backgroundColor: 'var(--color-surface)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.06)',
-          transition: 'height 0.3s ease',
+          overflow: 'visible',
         }}
       >
         {/* Loading overlay */}
