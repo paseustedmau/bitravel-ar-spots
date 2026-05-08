@@ -66,9 +66,6 @@ export default function ARViewer({
   // Bypass model-viewer's AR button entirely on iOS to avoid Safari/Chrome bugs.
   // Instead, we use a native <a rel="ar"> anchor which is 100% reliable across all iOS browsers.
   const needsManualQuickLook = device.isIOS && !!usdzUrl;
-  
-  // Apple Quick Look requires absolute URLs to work reliably in SPAs.
-  const absoluteUsdzUrl = usdzUrl ? new URL(usdzUrl, window.location.origin).href : undefined;
 
   const handleLoad = useCallback(() => {
     onLoad?.();
