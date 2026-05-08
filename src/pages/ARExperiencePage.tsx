@@ -53,6 +53,7 @@ export default function ARExperiencePage() {
 
   const deviceInfo = useRef(getDeviceInfo());
   const trackedPageView = useRef(false);
+  const trackedNotFound = useRef(false);
 
   const experience = slug ? experiences[slug] : null;
   const ui = uiCopy[lang];
@@ -185,6 +186,20 @@ export default function ARExperiencePage() {
 
   // ── 404 ──────────────────────────────────────────────────────────────────
   if (!experience || experience.status !== 'active') {
+    if (!trackedNotFound.current && slug) {
+      trackedNotFound.current = true;
+      const { os, deviceType } = deviceInfo.current;
+      trackEvent({
+        event: 'experience_not_found',
+        experience_slug: slug,
+        spot_id: spotId,
+        language: lang,
+        device_os: os,
+        device_type: deviceType,
+        timestamp: new Date().toISOString(),
+        campaign,
+      });
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div className="text-5xl mb-4">🐋</div>
@@ -269,7 +284,21 @@ export default function ARExperiencePage() {
                 {ui.errorMsg}
               </p>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  if (slug) {
+                    trackEvent({
+                      event: 'ar_retry_clicked',
+                      experience_slug: slug,
+                      spot_id: spotId,
+                      zone: experience?.zone,
+                      language: lang,
+                      device_os: deviceInfo.current.os,
+                      device_type: deviceInfo.current.deviceType,
+                      timestamp: new Date().toISOString(),
+                    });
+                  }
+                  window.location.reload();
+                }}
                 className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
                 style={{ backgroundColor: 'var(--color-primary)' }}
               >

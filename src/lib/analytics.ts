@@ -11,11 +11,12 @@ let posthogInitialized = false;
 function initPosthog() {
   if (posthogInitialized || !POSTHOG_KEY) return;
   posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST ?? 'https://app.posthog.com',
+    api_host: POSTHOG_HOST ?? 'https://us.i.posthog.com',
     capture_pageview: false,  // we handle this manually
     capture_pageleave: false,
     autocapture: false,
     persistence: 'memory',    // no cookies — privacy-friendly
+    capture_exceptions: true,
   });
   posthogInitialized = true;
 }

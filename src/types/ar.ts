@@ -45,7 +45,11 @@ export type AREventName =
   | 'cta_clicked'
   | 'catalog_viewed'
   | 'experience_selected'
-  | 'qr_downloaded';
+  | 'qr_downloaded'
+  | 'experience_not_found'
+  | 'ar_retry_clicked'
+  | 'spot_resolve_failed'
+  | 'qr_generator_opened';
 
 export type DeviceOS = 'ios' | 'android' | 'other';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';

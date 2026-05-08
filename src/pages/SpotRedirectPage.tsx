@@ -48,6 +48,14 @@ export default function SpotRedirectPage() {
 
       if (error || !data || !data.is_active || !data.experience_slug) {
         // Spot no encontrado, inactivo o sin experiencia asignada → catálogo
+        trackEvent({
+          event: 'spot_resolve_failed',
+          spot_id: spotId,
+          language: navigator.language.startsWith('en') ? 'en' : 'es',
+          device_os: os,
+          device_type: deviceType,
+          timestamp: new Date().toISOString(),
+        });
         navigate('/ar', { replace: true });
         return;
       }

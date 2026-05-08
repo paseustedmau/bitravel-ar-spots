@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import experiencesData from '@/data/ar-experiences.json';
 import type { ARExperience } from '@/types/ar';
@@ -15,6 +15,17 @@ export default function QRGeneratorPage() {
   const [selectedSlug, setSelectedSlug] = useState(experiences[0]?.slug ?? '');
   const [spotId, setSpotId] = useState('');
   const [campaign, setCampaign] = useState('');
+
+  useEffect(() => {
+    const { os, deviceType } = getDeviceInfo();
+    trackEvent({
+      event: 'qr_generator_opened',
+      language: 'es',
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
 
   /**
    * Si hay Spot ID → QR dinámico: /s/:spot_id
