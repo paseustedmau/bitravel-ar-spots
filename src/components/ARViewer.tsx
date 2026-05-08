@@ -63,10 +63,6 @@ export default function ARViewer({
   const viewerRef = useRef<HTMLElement>(null);
   const device = getDeviceInfo();
 
-  // Bypass model-viewer's AR button entirely on iOS to avoid Safari/Chrome bugs.
-  // Instead, we use a native <a rel="ar"> anchor which is 100% reliable across all iOS browsers.
-  const needsManualQuickLook = device.isIOS && !!usdzUrl;
-
   const handleLoad = useCallback(() => {
     onLoad?.();
   }, [onLoad]);
@@ -126,58 +122,16 @@ export default function ARViewer({
           backgroundColor: 'transparent',
         }}
       >
-        {/*
-          Botón AR nativo del slot de model-viewer.
-          Solo lo renderizamos en Android/Desktop. 
-          En iOS usamos el anchor manual debajo para evitar bugs en Safari/Chrome.
-        */}
-        {!device.isIOS && (
-          <button
-            slot="ar-button"
-            id="ar-activate-btn"
-            onClick={onARButtonClick}
-            style={arBtnStyle as React.CSSProperties}
-          >
-            <CubeIcon />
-            {arButtonLabel}
-          </button>
-        )}
-      </ModelViewer>
-
-      {/*
-        ── Botón manual Quick Look para iOS Chrome (y otros browsers iOS) ──────
-        Chrome en iOS no expone WebXR, así que model-viewer oculta el slot ar-button.
-        Sin embargo, iOS Quick Look se activa en CUALQUIER browser iOS usando:
-          <a href="archivo.usdz" rel="ar">
-        Este anchor se renderiza fuera del shadow DOM de model-viewer para que
-        siempre sea visible cuando se necesita.
-      */}
-      {needsManualQuickLook && (
         <button
-          id="ar-quicklook-manual"
-          onClick={(e) => {
-             e.preventDefault();
-             onARButtonClick?.();
-             
-             // Delegate AR activation to model-viewer directly
-             const viewer = viewerRef.current as any;
-             if (viewer && typeof viewer.activateAR === 'function') {
-               viewer.activateAR();
-             }
-          }}
-          style={{
-            ...arBtnStyle,
-            position: 'absolute',
-            bottom: '16px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 10,
-          }}
+          slot="ar-button"
+          id="ar-activate-btn"
+          onClick={onARButtonClick}
+          style={arBtnStyle as React.CSSProperties}
         >
           <CubeIcon />
           <span>{arButtonLabel}</span>
         </button>
-      )}
+      </ModelViewer>
     </div>
   );
 }
