@@ -119,6 +119,19 @@ export default function QRGeneratorPage() {
       setSaveMsg(`❌ Error: ${error.message}`);
     } else {
       setSaveMsg('✅ Spot guardado');
+      const { os, deviceType } = getDeviceInfo();
+      supabase.auth.getSession().then(({ data }) => {
+        trackEvent({
+          event: 'admin_spot_saved',
+          spot_id: spotId,
+          experience_slug: selectedSlug,
+          user_email: data.session?.user?.email,
+          language: 'es',
+          device_os: os,
+          device_type: deviceType,
+          timestamp: new Date().toISOString(),
+        });
+      });
       loadData();
     }
     setSaving(false);

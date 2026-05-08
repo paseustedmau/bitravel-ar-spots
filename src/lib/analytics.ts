@@ -32,6 +32,9 @@ export async function trackEvent(payload: AREventPayload): Promise<void> {
   try {
     initPosthog();
     if (posthogInitialized) {
+      if (payload.user_email) {
+        posthog.identify(payload.user_email);
+      }
       posthog.capture(payload.event, {
         experience_slug: payload.experience_slug,
         spot_id: payload.spot_id,
@@ -40,6 +43,7 @@ export async function trackEvent(payload: AREventPayload): Promise<void> {
         device_os: payload.device_os,
         device_type: payload.device_type,
         campaign: payload.campaign,
+        error_detail: payload.error_detail,
       });
     }
   } catch {
@@ -57,6 +61,8 @@ export async function trackEvent(payload: AREventPayload): Promise<void> {
       device_os: payload.device_os,
       device_type: payload.device_type,
       campaign: payload.campaign ?? null,
+      error_detail: payload.error_detail ?? null,
+      user_email: payload.user_email ?? null,
     });
   } catch {
     // Fire-and-forget — never block UX

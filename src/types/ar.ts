@@ -49,7 +49,12 @@ export type AREventName =
   | 'experience_not_found'
   | 'ar_retry_clicked'
   | 'spot_resolve_failed'
-  | 'qr_generator_opened';
+  | 'qr_generator_opened'
+  | 'admin_dashboard_viewed'
+  | 'admin_spot_saved'
+  | 'admin_spot_deleted'
+  | 'admin_spot_toggled'
+  | 'admin_login';
 
 export type DeviceOS = 'ios' | 'android' | 'other';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
@@ -65,6 +70,8 @@ export interface AREventPayload {
   device_type: DeviceType;
   timestamp: string;
   campaign?: string;
+  error_detail?: string;
+  user_email?: string;
 }
 
 // ── URL Params ─────────────────────────────────────────────────────────────

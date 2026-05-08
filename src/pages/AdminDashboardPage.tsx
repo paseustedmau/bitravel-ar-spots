@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { trackEvent } from '@/lib/analytics';
+import { getDeviceInfo } from '@/lib/device';
 
 interface Experience {
   id: string;
@@ -26,8 +28,22 @@ export default function AdminDashboardPage() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [tab, setTab] = useState<'experiences' | 'spots'>('experiences');
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | undefined>();
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const email = data.session?.user?.email;
+      setUserEmail(email);
+      const { os, deviceType } = getDeviceInfo();
+      trackEvent({
+        event: 'admin_dashboard_viewed',
+        user_email: email,
+        language: 'es',
+        device_os: os,
+        device_type: deviceType,
+        timestamp: new Date().toISOString(),
+      });
+    });
     loadData();
   }, []);
 
@@ -56,11 +72,33 @@ export default function AdminDashboardPage() {
   async function deleteSpot(spotId: string) {
     if (!confirm(`¿Eliminar spot "${spotId}"?`)) return;
     await supabase.from('ar_spots').delete().eq('spot_id', spotId);
+    const { os, deviceType } = getDeviceInfo();
+    trackEvent({
+      event: 'admin_spot_deleted',
+      spot_id: spotId,
+      user_email: userEmail,
+      language: 'es',
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+    });
     loadData();
   }
 
   async function toggleSpot(spot: Spot) {
-    await supabase.from('ar_spots').update({ is_active: !spot.is_active }).eq('spot_id', spot.spot_id);
+    const newActiveState = !spot.is_active;
+    await supabase.from('ar_spots').update({ is_active: newActiveState }).eq('spot_id', spot.spot_id);
+    const { os, deviceType } = getDeviceInfo();
+    trackEvent({
+      event: 'admin_spot_toggled',
+      spot_id: spot.spot_id,
+      user_email: userEmail,
+      language: 'es',
+      device_os: os,
+      device_type: deviceType,
+      timestamp: new Date().toISOString(),
+      error_detail: `New state: ${newActiveState}`, // Re-using error_detail for extra state info loosely
+    });
     loadData();
   }
 
