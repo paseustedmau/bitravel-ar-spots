@@ -24,6 +24,7 @@ export interface ARExperience {
   description: LocalizedString;
   instruction: LocalizedString;
   modelGlbUrl: string;
+  modelAndroidGlbUrl?: string;
   modelUsdzUrl?: string;
   posterUrl: string;
   cta: ARExperienceCTA;

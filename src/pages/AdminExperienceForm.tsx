@@ -14,6 +14,7 @@ interface FormData {
   instruction_es: string;
   instruction_en: string;
   model_glb_url: string;
+  model_android_glb_url: string;
   model_usdz_url: string;
   poster_url: string;
   cta_label_es: string;
@@ -31,7 +32,7 @@ const EMPTY: FormData = {
   description_es: '', description_en: '',
   instruction_es: 'Apunta tu cámara hacia una superficie plana y mueve lentamente tu teléfono.',
   instruction_en: 'Point your camera at a flat surface and slowly move your phone.',
-  model_glb_url: '', model_usdz_url: '', poster_url: '',
+  model_glb_url: '', model_android_glb_url: '', model_usdz_url: '', poster_url: '',
   cta_label_es: '', cta_label_en: '', cta_url: '', cta_type: 'guide',
   tags: '', zone: '', sort_order: 0,
 };
@@ -48,6 +49,7 @@ export default function AdminExperienceForm() {
 
   // Pending files to upload on save
   const [glbFile, setGlbFile] = useState<File | null>(null);
+  const [androidGlbFile, setAndroidGlbFile] = useState<File | null>(null);
   const [usdzFile, setUsdzFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
 
@@ -70,6 +72,7 @@ export default function AdminExperienceForm() {
               instruction_es: data.instruction_es || '',
               instruction_en: data.instruction_en || '',
               model_glb_url: data.model_glb_url || '',
+              model_android_glb_url: data.model_android_glb_url || '',
               model_usdz_url: data.model_usdz_url || '',
               poster_url: data.poster_url || '',
               cta_label_es: data.cta_label_es || '',
@@ -106,6 +109,7 @@ export default function AdminExperienceForm() {
 
     const finalSlug = form.slug || autoSlug(form.title_es);
     let glbUrl = form.model_glb_url;
+    let androidGlbUrl = form.model_android_glb_url;
     let usdzUrl = form.model_usdz_url;
     let posterUrl = form.poster_url;
 
@@ -115,6 +119,13 @@ export default function AdminExperienceForm() {
       const res = await uploadFile('ar-models', `${finalSlug}/model.${ext}`, glbFile);
       if ('url' in res) glbUrl = res.url;
       else { setMsg(`❌ Error GLB: ${res.error}`); setSaving(false); return; }
+    }
+
+    if (androidGlbFile) {
+      const ext = androidGlbFile.name.split('.').pop() || 'glb';
+      const res = await uploadFile('ar-models', `${finalSlug}/model_android.${ext}`, androidGlbFile);
+      if ('url' in res) androidGlbUrl = res.url;
+      else { setMsg(`❌ Error Android GLB: ${res.error}`); setSaving(false); return; }
     }
 
     if (usdzFile) {
@@ -141,6 +152,7 @@ export default function AdminExperienceForm() {
       instruction_es: form.instruction_es || null,
       instruction_en: form.instruction_en || null,
       model_glb_url: glbUrl,
+      model_android_glb_url: androidGlbUrl || null,
       model_usdz_url: usdzUrl || null,
       poster_url: posterUrl,
       cta_label_es: form.cta_label_es || null,
@@ -283,11 +295,21 @@ export default function AdminExperienceForm() {
 
           <div style={{ marginBottom: 14 }}>
             <FileUpload
-              label="Archivo GLB (Android) *"
+              label="Archivo GLB (Web) *"
               accept=".glb"
-              hint="Formato binario para Android Scene Viewer (~max 50MB)"
+              hint="Formato binario para visualizador Web (~max 50MB)"
               currentUrl={form.model_glb_url}
               onFileSelected={setGlbFile}
+            />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <FileUpload
+              label="Archivo GLB Escalado (Android)"
+              accept=".glb"
+              hint="Formato binario escalado para Android Scene Viewer (~max 50MB)"
+              currentUrl={form.model_android_glb_url}
+              onFileSelected={setAndroidGlbFile}
             />
           </div>
 

@@ -338,6 +338,7 @@ export default function ARExperiencePage() {
         ) : (
           <ARViewer
             glbUrl={experience.model_glb_url}
+            androidGlbUrl={experience.model_android_glb_url}
             usdzUrl={experience.model_usdz_url}
             posterUrl={experience.poster_url}
             alt={title}

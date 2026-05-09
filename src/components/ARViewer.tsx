@@ -3,6 +3,7 @@ import { getDeviceInfo } from '@/lib/device';
 
 interface ARViewerProps {
   glbUrl: string;
+  androidGlbUrl?: string;
   usdzUrl?: string;
   posterUrl: string;
   alt: string;
@@ -64,6 +65,7 @@ function openIOSQuickLook(usdzUrl: string, posterUrl: string) {
 
 export default function ARViewer({
   glbUrl,
+  androidGlbUrl,
   usdzUrl,
   posterUrl,
   alt,
@@ -116,7 +118,7 @@ export default function ARViewer({
     }
 
     if (device.isAndroid) {
-      window.location.href = buildSceneViewerUrl(glbUrl, alt);
+      window.location.href = buildSceneViewerUrl(androidGlbUrl || glbUrl, alt);
       return;
     }
 
@@ -125,7 +127,7 @@ export default function ARViewer({
     if (viewer && typeof viewer.activateAR === 'function') {
       viewer.activateAR();
     }
-  }, [device.isIOS, device.isAndroid, usdzUrl, posterUrl, glbUrl, alt, onARButtonClick]);
+  }, [device.isIOS, device.isAndroid, usdzUrl, posterUrl, glbUrl, androidGlbUrl, alt, onARButtonClick]);
 
   /* ─── Copy link for WebView users ──────────────────────────────────── */
   const handleCopyLink = useCallback(() => {

@@ -7,11 +7,16 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
-  "keywords": ["webAR", "bitravel", "model-viewer"],
+  "keywords": [
+    "webAR",
+    "bitravel",
+    "model-viewer"
+  ],
   "author": "Bitravel",
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@gltf-transform/core": "^4.3.0",
     "@supabase/supabase-js": "^2.105.3",
     "posthog-js": "^1.372.10",
     "qrcode": "^1.5.4",
