@@ -171,9 +171,14 @@ export default function ARViewer({
         auto-rotate=""
         auto-rotate-delay={2000}
         rotation-per-second="20deg"
+        camera-target="auto auto auto"
+        min-field-of-view="auto"
+        max-field-of-view="auto"
+        interpolation-decay="200"
+        bounds="tight"
         shadow-intensity="1"
         shadow-softness="1"
-        exposure="1"
+        exposure="1.2"
         loading="eager"
         reveal="auto"
         style={{
