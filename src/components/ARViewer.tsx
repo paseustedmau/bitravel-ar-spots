@@ -129,13 +129,32 @@ export default function ARViewer({
     }
   }, [device.isIOS, device.isAndroid, usdzUrl, posterUrl, glbUrl, androidGlbUrl, alt, onARButtonClick]);
 
-  /* ─── Copy link for WebView users ──────────────────────────────────── */
-  const handleCopyLink = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+  /* ─── Open in external browser for WebView users ───────────────────── */
+  const handleOpenBrowser = useCallback(() => {
+    const url = window.location.href;
+    
+    // Always copy to clipboard as a reliable fallback
+    navigator.clipboard.writeText(url).then(() => {
       const btn = document.getElementById('copy-link-btn');
-      if (btn) btn.textContent = '✓ Enlace copiado';
+      if (btn) {
+        const span = btn.querySelector('span');
+        if (span) span.textContent = '✓ ¡Enlace copiado!';
+        
+        // On Android, we can try to force open the default system browser
+        if (device.isAndroid) {
+          // Intent scheme trick for Android to escape WebViews
+          const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;action=android.intent.action.VIEW;end;`;
+          window.location.href = intentUrl;
+        }
+        // iOS: No reliable way to force Safari open from Instagram/WA via JS alone,
+        // so the "Copy Link" fallback is the best we can do.
+
+        setTimeout(() => {
+          if (span) span.textContent = '📋 Copiar enlace y abrir en navegador web';
+        }, 3000);
+      }
     });
-  }, []);
+  }, [device.isAndroid]);
 
   const ModelViewer = 'model-viewer' as unknown as React.ElementType;
   const inWebView = isWebView();
@@ -179,27 +198,34 @@ export default function ARViewer({
           /* ── WebView: show "open in real browser" + copy link ────── */
           <div
             style={{
-              padding: '14px 20px',
+              padding: '20px',
               backgroundColor: '#fff',
-              borderRadius: '16px',
-              boxShadow: '0 2px 16px rgba(0,0,0,0.1)',
+              borderRadius: '20px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
+              gap: '12px',
               alignItems: 'center',
               textAlign: 'center',
+              border: '1px solid rgba(0,0,0,0.04)',
             }}
           >
-            <p style={{ fontSize: '13px', color: '#333', margin: 0, fontWeight: 600 }}>
-              Para vivir la experiencia AR, abre esta página en {device.isIOS ? 'Safari' : 'Chrome'}.
+            <p style={{ 
+              fontSize: '14px', 
+              color: '#1A1A1A', 
+              margin: 0, 
+              fontWeight: 600,
+              lineHeight: '1.4'
+            }}>
+              Para vivir la experiencia AR, abre esta página en el navegador ({device.isIOS ? 'Safari' : 'Chrome'}).
             </p>
             <button
               id="copy-link-btn"
               type="button"
-              onClick={handleCopyLink}
+              onClick={handleOpenBrowser}
               style={{
                 width: '100%',
-                padding: '14px 20px',
+                padding: '16px 20px',
                 backgroundColor: '#3234DA',
                 color: '#fff',
                 border: 'none',
@@ -207,10 +233,20 @@ export default function ARViewer({
                 fontSize: '15px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
               }}
             >
-              📋 Copiar enlace
+              <span>📋 Copiar enlace y abrir en navegador web</span>
             </button>
+            <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>
+              {device.isIOS 
+                ? 'Toca los tres puntos arriba y selecciona "Abrir en Safari"' 
+                : 'Toca los tres puntos arriba y selecciona "Abrir en el navegador"'}
+            </p>
           </div>
         ) : (
           /* ── Normal browser: AR button, ALWAYS visible, NO conditions ── */
