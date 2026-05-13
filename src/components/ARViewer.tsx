@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { getDeviceInfo } from '@/lib/device';
+import type { Lang } from '@/types/ar';
 
 interface ARViewerProps {
   glbUrl: string;
@@ -8,11 +9,27 @@ interface ARViewerProps {
   posterUrl: string;
   alt: string;
   arButtonLabel: string;
+  lang?: Lang;
   onLoad?: () => void;
   onError?: () => void;
   onARStart?: () => void;
   onARButtonClick?: () => void;
 }
+
+const uiCopy = {
+  es: {
+    webViewTitle: 'Para vivir la experiencia AR, abre esta página en el navegador.',
+    webViewButton: '📋 Copiar enlace y abrir en navegador web',
+    webViewFooter: 'Toca los tres puntos arriba y selecciona "Abrir en el navegador"',
+    copied: '✓ ¡Enlace copiado!',
+  },
+  en: {
+    webViewTitle: 'To view the AR experience, open this page in your browser.',
+    webViewButton: '📋 Copy link and open in web browser',
+    webViewFooter: 'Tap the three dots above and select "Open in browser"',
+    copied: '✓ Link copied!',
+  }
+};
 
 function CubeIcon() {
   return (
@@ -74,6 +91,7 @@ export default function ARViewer({
   onError,
   onARStart,
   onARButtonClick,
+  lang,
 }: ARViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
   const device = getDeviceInfo();
@@ -132,13 +150,14 @@ export default function ARViewer({
   /* ─── Open in external browser for WebView users ───────────────────── */
   const handleOpenBrowser = useCallback(() => {
     const url = window.location.href;
+    const ui = uiCopy[lang || 'es'];
     
     // Always copy to clipboard as a reliable fallback
     navigator.clipboard.writeText(url).then(() => {
       const btn = document.getElementById('copy-link-btn');
       if (btn) {
         const span = btn.querySelector('span');
-        if (span) span.textContent = '✓ ¡Enlace copiado!';
+        if (span) span.textContent = ui.copied;
         
         // On Android, we can try to force open the default system browser
         if (device.isAndroid) {
@@ -150,14 +169,15 @@ export default function ARViewer({
         // so the "Copy Link" fallback is the best we can do.
 
         setTimeout(() => {
-          if (span) span.textContent = '📋 Copiar enlace y abrir en navegador web';
+          if (span) span.textContent = ui.webViewButton;
         }, 3000);
       }
     });
-  }, [device.isAndroid]);
+  }, [device.isAndroid, lang]);
 
   const ModelViewer = 'model-viewer' as unknown as React.ElementType;
   const inWebView = isWebView();
+  const ui = uiCopy[lang || 'es'];
 
   return (
     <>
@@ -222,7 +242,7 @@ export default function ARViewer({
               fontWeight: 600,
               lineHeight: '1.4'
             }}>
-              Para vivir la experiencia AR, abre esta página en el navegador.
+              {ui.webViewTitle}
             </p>
             <button
               id="copy-link-btn"
@@ -245,10 +265,10 @@ export default function ARViewer({
                 transition: 'transform 0.2s ease, background-color 0.2s ease',
               }}
             >
-              <span>📋 Copiar enlace y abrir en navegador web</span>
+              <span>{ui.webViewButton}</span>
             </button>
             <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>
-              Toca los tres puntos arriba y selecciona "Abrir en el navegador"
+              {ui.webViewFooter}
             </p>
           </div>
         ) : (

@@ -343,6 +343,7 @@ export default function ARExperiencePage() {
             posterUrl={experience.poster_url}
             alt={title}
             arButtonLabel={ui.arButton}
+            lang={lang}
             onLoad={handleModelLoad}
             onError={handleModelError}
             onARStart={handleARStart}
