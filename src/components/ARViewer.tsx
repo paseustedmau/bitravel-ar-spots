@@ -222,7 +222,7 @@ export default function ARViewer({
               fontWeight: 600,
               lineHeight: '1.4'
             }}>
-              Para vivir la experiencia AR, abre esta página en el navegador ({device.isIOS ? 'Safari' : 'Chrome'}).
+              Para vivir la experiencia AR, abre esta página en el navegador.
             </p>
             <button
               id="copy-link-btn"
@@ -248,9 +248,7 @@ export default function ARViewer({
               <span>📋 Copiar enlace y abrir en navegador web</span>
             </button>
             <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>
-              {device.isIOS 
-                ? 'Toca los tres puntos arriba y selecciona "Abrir en Safari"' 
-                : 'Toca los tres puntos arriba y selecciona "Abrir en el navegador"'}
+              Toca los tres puntos arriba y selecciona "Abrir en el navegador"
             </p>
           </div>
         ) : (
